@@ -1,0 +1,18 @@
+{
+  "_source": "Built from projects/budget-adherence-tracking/budget-categories.md (category level). Amounts are AUD cents per month. null = no monthly amount.",
+  "currency": "AUD",
+  "categories": [
+    {"id": 1, "name": "House + Core Bills",          "regular_cents": 669891, "sinking_cents": 88834},
+    {"id": 2, "name": "Groceries + Household",       "regular_cents": 110000, "sinking_cents": 0},
+    {"id": 3, "name": "Eating Out + Convenience",    "regular_cents": 40000,  "sinking_cents": 0},
+    {"id": 4, "name": "Medical + Psychology",        "regular_cents": 104100, "sinking_cents": 37049},
+    {"id": 5, "name": "Car + Transport",             "regular_cents": 43290,  "sinking_cents": 54710},
+    {"id": 6, "name": "Flights + Holidays",          "regular_cents": 0,      "sinking_cents": 80000},
+    {"id": 7, "name": "Personal + Fun",              "regular_cents": 47300,  "sinking_cents": 21500},
+    {"id": 8, "name": "Gifts + Family + Child",      "regular_cents": 12000,  "sinking_cents": 27500},
+    {"id": 9, "name": "Emergency + Buffer",          "regular_cents": null,   "sinking_cents": null},
+    {"id": 10, "name": "Spare / future use",         "regular_cents": null,   "sinking_cents": null}
+  ],
+  "_note": "budget-categories.md prints a Sinking total of 3,096.93 but its category rows sum to 3,095.93 (and Regular + Sinking = 13,361.74 only with 3,095.93). Rows are used; the printed Sinking total looks like a $1.00 typo in the source.",
+  "planned_totals": {"regular_cents": 1026581, "sinking_cents": 309593, "monthly_transfer_cents": 1336174}
+}

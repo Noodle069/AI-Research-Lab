@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block body %}
+<section class="card">
+  <h1>Import a statement</h1>
+  <p class="muted">Statement PDF (ING, NAB card, offset or loan listing). The file is checked and previewed first. Nothing is saved until you approve.</p>
+  <form method="post" action="{{ url_for('import_preview') }}" enctype="multipart/form-data">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input type="file" name="statement" accept="application/pdf,.pdf" required>
+    <button type="submit">Check and preview</button>
+  </form>
+</section>
+<section class="card">
+  <h1>Monthly budget</h1>
+  <table>
+    <thead><tr><th>#</th><th>Category</th><th class="num">Regular</th><th class="num">Sinking</th></tr></thead>
+    <tbody>
+    {% for c in cats %}
+      <tr><td>{{ c.id }}</td><td>{{ c.name }}</td>
+        <td class="num">{{ (c.regular_cents|money) if c.regular_cents is not none else 'none' }}</td>
+        <td class="num">{{ (c.sinking_cents|money) if c.sinking_cents is not none else 'none' }}</td></tr>
+    {% endfor %}
+    </tbody>
+    <tfoot><tr><td></td><td>Total planned</td><td class="num">{{ tot_reg|money }}</td><td class="num">{{ tot_sink|money }}</td></tr></tfoot>
+  </table>
+</section>
+{% endblock %}

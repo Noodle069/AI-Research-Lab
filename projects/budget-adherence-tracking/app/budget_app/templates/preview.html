@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block body %}
+<section class="card">
+  <h1>Preview (nothing saved yet)</h1>
+  <p class="muted">{{ p.layout }}</p>
+  <dl class="grid">
+    <div><dt>Date range</dt><dd>{{ start|dmy }} to {{ end|dmy }}</dd></div>
+    <div><dt>Transactions</dt><dd>{{ p.rows|length }} ({{ n_in }} in, {{ n_out }} out)</dd></div>
+    <div><dt>Total in</dt><dd>{{ p.total_in_cents|money }}</dd></div>
+    <div><dt>Total out</dt><dd>{{ (-p.total_out_cents)|money }}</dd></div>
+    <div><dt>Opening balance</dt><dd>{{ p.opening_cents|money }}</dd></div>
+    <div><dt>Closing balance</dt><dd>{{ p.closing_cents|money }}</dd></div>
+    <div><dt>Uncategorised</dt><dd>{{ stats.uncategorised }} of {{ p.rows|length }} (no rule matches yet)</dd></div>
+    <div><dt>Inferred years</dt><dd>{{ 'Yes: year taken from the month-year headings' if p.years_from_headings else 'None (dates carry the year)' }}</dd></div>
+    {% if stats.dups is none %}
+    <div><dt>Duplicates / transfers</dt><dd>Choose the account below, then Update preview</dd></div>
+    {% else %}
+    <div><dt>Duplicates (already saved, skipped)</dt><dd>{{ stats.dups }}</dd></div>
+    <div><dt>Will be saved</dt><dd>{{ stats.new }}</dd></div>
+    <div><dt>Transfer pairs with other accounts</dt><dd>{{ stats.pairs }} ({{ stats.auto_pairs }} exact same-day, auto-marked; others are suggestions)</dd></div>
+    <div><dt>Excluded from spending by role</dt><dd>{{ stats.role_transfers }}</dd></div>
+    {% endif %}
+  </dl>
+  <h2>Checks</h2>
+  <ul class="checks">
+    {% for g in p.gates %}<li class="{{ 'ok' if g.passed else 'fail' }}">{{ 'PASS' if g.passed else 'FAIL' }} &mdash; {{ g.name }}</li>{% endfor %}
+  </ul>
+  {% for w in p.warnings %}<p class="muted">Note: {{ w }}</p>{% endfor %}
+  {% if error %}<p class="err">{{ error }}</p>{% endif %}
+  {% if note %}<p class="muted">{{ note }}</p>{% endif %}
+  <h2>Account</h2>
+  <p class="muted">Pick an existing account or create one with your own name (never an account number), and confirm its role.</p>
+  <form method="post" action="{{ url_for('import_commit', pid=pid) }}">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <div class="fields">
+      <div><label for="account">Account</label>
+        <select name="account" id="account">
+          {% for a in accounts %}<option value="{{ a.id }}" {{ 'selected' if sel and sel.account_id == a.id }}>{{ a.label }}</option>{% endfor %}
+          <option value="new" {{ 'selected' if not accounts or (sel and sel.account_id is none) }}>Create a new account</option>
+        </select></div>
+      <div><label for="new_label">New account name</label>
+        <input type="text" name="new_label" id="new_label" maxlength="60" value="{{ sel.label if sel and sel.account_id is none else '' }}"></div>
+      <div><label for="role">Role</label>
+        <select name="role" id="role">
+          {% for k, v in roles.items() %}<option value="{{ k }}" {{ 'selected' if k == (sel.role if sel else suggested_role) }}>{{ v }}</option>{% endfor %}
+        </select></div>
+    </div>
+    <div class="actions">
+      <button type="submit" class="secondary" formaction="{{ url_for('import_check', pid=pid) }}">Update preview</button>
+      <button type="submit" {{ '' if sel and stats.new else 'disabled' }}>Approve and save</button>
+      <button type="submit" class="secondary" formaction="{{ url_for('import_discard', pid=pid) }}">Discard</button>
+    </div>
+  </form>
+</section>
+<section class="card">
+  <h2>Transactions</h2>
+  <table>
+    <thead><tr><th>#</th><th>Date</th><th>Details</th><th class="num">Amount</th><th class="num">Balance</th><th>Status</th></tr></thead>
+    <tbody>
+    {% for r in p.rows %}
+      <tr class="{{ 'dup' if stats.flags[loop.index0] }}"><td>{{ r.number }}</td><td>{{ r.date|dmy }}</td><td>{{ r.description }}</td>
+        <td class="num {{ 'neg' if r.amount_cents < 0 else 'pos' }}">{{ r.amount_cents|money }}</td>
+        <td class="num">{{ r.balance_cents|money if r.balance_cents is not none else "" }}</td><td>{{ 'duplicate, skipped' if stats.flags[loop.index0] else '' }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

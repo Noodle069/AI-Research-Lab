@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block body %}
+<section class="card bad">
+  <h1>File rejected</h1>
+  <p>The whole file was rejected. Nothing was imported or saved.</p>
+  <ul>{% for e in errors[:50] %}<li>{{ e }}</li>{% endfor %}</ul>
+  {% if errors|length > 50 %}<p class="muted">{{ errors|length - 50 }} more not shown.</p>{% endif %}
+  <p><a class="btn" href="{{ url_for('home') }}">Back</a></p>
+</section>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status, pct, barchart, linechart %}
+{% block body %}
+{% if not t %}
+<section class="card"><h1>Trends</h1><p>No transactions yet. <a href="{{ url_for('home') }}">Import a statement</a>.</p></section>
+{% else %}
+<section class="card">
+  <h1>Trends</h1>
+  <p class="muted">Monthly Regular actual against Regular budget, every month from {{ t.months[0]|ymlabel }} to {{ t.months[-1]|ymlabel }}. Bars show actual; the short line is the budget; red bars are over budget. Overall includes Uncategorised spend.</p>
+  {% if t.bad_months %}
+  <div class="warn card"><strong>Coverage warning.</strong> Statements are partial or missing in these months, marked "Partial coverage" below: {% for m in t.bad_months %}{{ m|ymlabel }}{{ ', ' if not loop.last }}{% endfor %}. Low spending in those months may be missing statements, not under-spending. <a href="{{ url_for('coverage_page') }}">See coverage</a>.</div>
+  {% endif %}
+  <ul>
+    <li><a href="#overall">Overall</a></li>
+    {% for c in t.cats %}<li><a href="#cat{{ c.id }}">{{ c.id }}. {{ c.name }}</a></li>{% endfor %}
+    <li><a href="#sinking">Sinking balances</a></li>
+  </ul>
+</section>
+{% set labels = t.months|map('ymlabel')|list %}
+<section class="card" id="overall">
+  <h2>Overall (regular + uncategorised)</h2>
+  {{ barchart(t.overall.chart, labels, 'Overall monthly regular actual against budget') }}
+  {% macro table(rows) %}
+  <table>
+    <thead><tr><th>Month</th><th class="num">Budget</th><th class="num">Actual</th><th class="num">Budget left</th><th class="num">Used</th><th>Status</th><th></th></tr></thead>
+    <tbody>{% for r in rows %}<tr><td>{{ r.ym|ymlabel }}</td><td class="num">{{ r.budget|money }}</td><td class="num">{{ r.actual|money }}</td><td class="num {{ 'neg' if r.left < 0 }}">{{ r.left|money }}</td><td class="num">{{ pct(r.pct) }}</td><td>{{ status(r.status) }}</td><td class="muted">{{ 'Partial coverage' if r.cov }}</td></tr>{% endfor %}</tbody>
+  </table>
+  {% endmacro %}
+  {{ table(t.overall.rows) }}
+</section>
+{% for c in t.cats %}
+<section class="card" id="cat{{ c.id }}">
+  <h2>{{ c.id }}. {{ c.name }}</h2>
+  {{ barchart(c.chart, labels, c.name ~ ' monthly regular actual against budget') }}
+  {{ table(c.rows) }}
+</section>
+{% endfor %}
+<section class="card" id="sinking">
+  <h2>Sinking balance by category</h2>
+  <p class="muted">Running balance at the end of each month: set-aside from the start month ({{ t.sink_start|ymlabel if t.sink_start else 'none' }}{{ ', default' if t.sink_start_default }}) minus Sinking-pool spend. Change the start month on the <a href="{{ url_for('month_page') }}">Month</a> page. The line is the balance; the grey line is zero.</p>
+  {% for s in t.sinks %}
+  <h2>{{ s.id }}. {{ s.name }}</h2>
+  {{ linechart(s.chart, labels, s.name ~ ' sinking balance') }}
+  <table>
+    <thead><tr><th>Month</th><th class="num">Set aside</th><th class="num">Sinking spend</th><th class="num">Balance</th><th></th></tr></thead>
+    <tbody>{% for r in s.rows %}<tr><td>{{ r.ym|ymlabel }}</td><td class="num">{{ r.set_aside_month|money }}</td><td class="num">{{ r.spent_month|money }}</td><td class="num {{ 'neg' if r.balance < 0 }}">{{ r.balance|money }}</td><td class="muted">{{ 'Partial coverage' if r.cov }}</td></tr>{% endfor %}</tbody>
+  </table>
+  {% endfor %}
+</section>
+{% endif %}
+{% endblock %}

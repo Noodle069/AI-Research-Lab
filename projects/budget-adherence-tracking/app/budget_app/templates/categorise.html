@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% from "_macros.html" import cat_select, pool_select, notices %}
+{% block body %}
+<section class="card">
+  <h1>Uncategorised spending</h1>
+  {{ notices(msgs) }}
+  <p class="muted">Spending with no category yet, grouped by payee. It still counts in the overall total. Choose a category for a whole group at once; tick Remember to create a rule so future imports are categorised automatically. Sinking means it draws on that category's sinking pool (irregular bills).</p>
+  <p><strong>{{ q.rows }}</strong> transaction(s) uncategorised, <strong>{{ q.total_cents|money }}</strong> in total.
+    {% if q.unnamed %}{{ q.unnamed }} have no usable payee name; fix them one by one under <a href="{{ url_for('transactions_page', cat='none') }}">Transactions</a>.{% endif %}</p>
+  {% if not q.groups %}<p>Nothing to categorise.</p>{% else %}
+  <table>
+    <thead><tr><th>Payee</th><th class="num">Count</th><th class="num">Total</th><th>Assign to all</th></tr></thead>
+    <tbody>
+    {% for g in q.groups %}
+      <tr><td>{{ g.payee_key }}</td><td class="num">{{ g.n }}</td><td class="num">{{ g.total_cents|money }}</td>
+        <td><form class="inline" method="post" action="{{ url_for('categorise_assign') }}">
+          <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="payee_key" value="{{ g.payee_key }}">
+          {{ cat_select(cats, none) }} {{ pool_select(pools, 'regular') }}
+          <label><input type="checkbox" name="remember" value="1" checked> Remember</label>
+          <button type="submit">Apply</button></form></td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% if q.more %}<p class="muted">Showing the largest groups. Apply these, then reload for more.</p>{% endif %}
+  {% endif %}
+</section>
+{% endblock %}

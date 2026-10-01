@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% from "_macros.html" import cat_select, pool_select, notices %}
+{% block body %}
+<section class="card">
+  <h1>Rules</h1>
+  {{ notices(msgs) }}
+  <p class="muted">Rules run in priority order (lowest number first); the first match wins. Your own rules start at 10, the built-in generic set at 400 to 500. Rules never change a transaction you categorised by hand. Changes apply to new imports; use Re-run to apply them to existing rows.</p>
+  <form method="post" action="{{ url_for('rules_rerun') }}"><input type="hidden" name="csrf" value="{{ csrf }}"><button type="submit">Re-run rules on existing rows</button></form>
+</section>
+<section class="card">
+  <h2>Add a rule</h2>
+  <form method="post" action="{{ url_for('rules_add') }}">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <div class="fields">
+      <div><label for="match_type">Match</label><select name="match_type" id="match_type">
+        <option value="substring">Text contains</option><option value="payee">Payee equals</option><option value="regex">Regular expression</option></select></div>
+      <div><label for="pattern">Pattern</label><input type="text" name="pattern" id="pattern" maxlength="200" required></div>
+      <div><label>Category</label>{{ cat_select(cats, none) }}</div>
+      <div><label>Pool</label>{{ pool_select(pools, 'regular') }}</div>
+      <div><label for="priority">Priority</label><input type="text" name="priority" id="priority" value="100" size="5"></div>
+    </div>
+    <button type="submit">Add rule</button>
+  </form>
+</section>
+<section class="card">
+  <h2>{{ rules|length }} rules</h2>
+  <table>
+    <thead><tr><th>Priority</th><th>Match</th><th>Pattern</th><th>Category</th><th>Pool</th><th>Source</th><th></th></tr></thead>
+    <tbody>
+    {% for r in rules %}
+      <tr><td><form class="inline" method="post" action="{{ url_for('rules_priority', rid=r.id) }}"><input type="hidden" name="csrf" value="{{ csrf }}">
+          <input type="text" name="priority" value="{{ r.priority }}" size="5" aria-label="Priority"> <button type="submit" class="secondary">Set</button></form></td>
+        <td>{{ r.match_type }}</td><td>{{ r.pattern }}</td><td>{{ r.category }}</td><td>{{ r.pool }}</td><td>{{ 'built-in' if r.is_seed else 'yours' }}</td>
+        <td><form class="inline" method="post" action="{{ url_for('rules_delete', rid=r.id) }}"><input type="hidden" name="csrf" value="{{ csrf }}"><button type="submit" class="secondary">Delete</button></form></td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

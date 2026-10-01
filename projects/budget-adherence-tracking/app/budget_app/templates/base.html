@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Budget tracker</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+</head>
+<body>
+  <header class="top"><a href="{{ url_for('home') }}" class="brand">Budget tracker</a><nav><a href="{{ url_for('month_page') }}">Month</a> <a href="{{ url_for('bleeding_page') }}">Overspend</a> <a href="{{ url_for('trends_page') }}">Trends</a> <a href="{{ url_for('coverage_page') }}">Coverage</a> <a href="{{ url_for('transfers_page') }}">Transfers</a> <a href="{{ url_for('categorise_page') }}">Uncategorised</a> <a href="{{ url_for('transactions_page') }}">Transactions</a> <a href="{{ url_for('rules_page') }}">Rules</a></nav><span class="muted">Local only. Nothing leaves this computer.</span></header>
+  <main>{% block body %}{% endblock %}</main>
+  <footer class="muted">Budget tracker v{{ app_version }}</footer>
+</body>
+</html>

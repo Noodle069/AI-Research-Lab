@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block body %}
+<section class="card">
+  <h1>Coverage</h1>
+  <p class="muted">Which accounts have data each month, from the statements you imported. A month with dates that do not span the whole month may be a short export, not low spending.</p>
+  {% if not cov.months %}<p>No statements imported yet.</p>{% else %}
+  <table>
+    <thead><tr><th>Month</th>{% for a in cov.accounts %}<th>{{ a.label }} ({{ roles[a.role] }})</th>{% endfor %}</tr></thead>
+    <tbody>
+    {% for m in cov.months %}
+      <tr><td>{{ m.label }}</td>
+      {% for c in m.cells %}
+        <td class="{{ 'ok' if c.state == 'full' else ('' if c.state == 'partial' else 'muted') }}">
+        {% if c.state == 'none' %}No data
+        {% else %}{{ c.first|dmy }} to {{ c.last|dmy }}<br><span class="muted">{{ c.count }} transactions{{ '' if c.state == 'full' else ', part of month' }}</span>{% endif %}
+        </td>
+      {% endfor %}</tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</section>
+{% endblock %}

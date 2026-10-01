@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% from "_macros.html" import cat_select, pool_select, notices %}
+{% block body %}
+<section class="card">
+  <h1>Transactions</h1>
+  {{ notices(msgs) }}
+  <p class="muted">Correct a category or pool here. Your correction is never overwritten by rules or re-imports. Tick Apply to similar to change every other transaction with the same payee that you have not set by hand, and Remember to create a rule for that payee. Only spending counts toward category totals.</p>
+  <form method="get" action="{{ url_for('transactions_page') }}">
+    <div class="fields">
+      <div><label for="ym">Month (yyyy-mm, blank = all)</label><input type="text" name="ym" id="ym" value="{{ ym }}" size="8" maxlength="7"></div>
+      <div><label for="cat">Category</label><select name="cat" id="cat">
+        <option value="" {{ 'selected' if not cat }}>All</option><option value="none" {{ 'selected' if cat == 'none' }}>Uncategorised</option>
+        {% for c in cats %}<option value="{{ c.id }}" {{ 'selected' if cat == c.id|string }}>{{ c.id }}. {{ c.name }}</option>{% endfor %}</select></div>
+    </div>
+    <button type="submit" class="secondary">Filter</button>
+  </form>
+  <table>
+    <thead><tr><th>Date</th><th>Account</th><th>Details</th><th class="num">Amount</th><th>Flow</th><th>Category</th></tr></thead>
+    <tbody>
+    {% for t in rows %}
+      <tr><td>{{ t.txn_date[8:10] }}/{{ t.txn_date[5:7] }}/{{ t.txn_date[:4] }}</td><td>{{ t.account }}</td><td>{{ t.description }}</td>
+        <td class="num">{{ t.amount_cents|money }}</td><td>{{ t.flow_type }}</td>
+        <td><form class="inline" method="post" action="{{ url_for('transaction_category', tid=t.id) }}">
+          <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="ym" value="{{ ym }}"><input type="hidden" name="cat_filter" value="{{ cat }}">
+          {{ cat_select(cats, t.category_id) }} {{ pool_select(pools, t.pool) }}
+          <label><input type="checkbox" name="similar" value="1"> Apply to similar</label>
+          <label><input type="checkbox" name="remember" value="1"> Remember</label>
+          <button type="submit" class="secondary">Save</button>{% if t.category_user_set %} <span class="muted">set by you</span>{% endif %}</form></td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p>{% if page > 1 %}<a href="{{ url_for('transactions_page', page=page-1, ym=ym, cat=cat) }}">Newer</a>{% endif %} {% if more %}<a href="{{ url_for('transactions_page', page=page+1, ym=ym, cat=cat) }}">Older</a>{% endif %}</p>
+</section>
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% from "_macros.html" import cov_warning, month_nav, pct %}
+{% block body %}
+{% if not b %}
+<section class="card"><h1>Where am I bleeding</h1><p>No transactions yet. <a href="{{ url_for('home') }}">Import a statement</a>.</p></section>
+{% else %}
+<section class="card">
+  <h1>Where am I bleeding</h1>
+  {{ month_nav('bleeding_page', nav, ym) }}
+  <p><a href="{{ url_for('month_page', ym=ym) }}">Back to the month</a></p>
+  <p class="muted">Categories whose Regular actual is above their Regular budget, largest overspend first. Sinking-pool spend is not counted here.</p>
+</section>
+{{ cov_warning(b.coverage) }}
+{% if b.pace %}
+<section class="card">
+  <h2>Month-to-date pace</h2>
+  <p class="muted">This is a pace, not a verdict: spent so far compared with budget &times; {{ b.pace.elapsed }} days elapsed / {{ b.pace.days }} days in the month. Spending is lumpy, so being ahead of pace early in the month is normal for bills.</p>
+  <table>
+    <thead><tr><th>Category</th><th class="num">Spent so far</th><th class="num">Expected by now</th><th class="num">Difference</th><th class="num">Full-month budget</th><th>Pace</th></tr></thead>
+    <tbody>
+    {% for r in b.pace.rows %}<tr><td>{{ r.name }}</td><td class="num">{{ r.spent|money }}</td><td class="num">{{ r.expected|money }}</td><td class="num {{ 'neg' if r.ahead }}">{{ r.diff|money }}</td><td class="num">{{ r.budget|money }}</td><td>{{ 'Ahead of pace' if r.ahead else 'On or under pace' }}</td></tr>{% endfor %}
+    </tbody>
+    <tfoot><tr><td>Overall (regular + uncategorised)</td><td class="num">{{ b.pace.overall.spent|money }}</td><td class="num">{{ b.pace.overall.expected|money }}</td><td class="num {{ 'neg' if b.pace.overall.ahead }}">{{ b.pace.overall.diff|money }}</td><td class="num">{{ b.pace.overall.budget|money }}</td><td>{{ 'Ahead of pace' if b.pace.overall.ahead else 'On or under pace' }}</td></tr></tfoot>
+  </table>
+</section>
+{% endif %}
+<section class="card">
+  <h2>Overspent categories</h2>
+  {% if not b.over %}<p class="ok">No category is over its Regular budget this month.</p>{% endif %}
+  <table>{% if b.over %}
+    <thead><tr><th>#</th><th>Category</th><th class="num">Regular budget</th><th class="num">Regular actual</th><th class="num">Over by</th><th class="num">Percent over</th></tr></thead>{% endif %}
+    <tbody>
+    {% for r in b.over %}
+      <tr><td>{{ loop.index }}</td><td>{{ r.id }}. {{ r.name }}</td><td class="num">{{ r.budget|money }}</td><td class="num">{{ r.actual|money }}</td><td class="num neg">{{ r.over|money }}</td><td class="num">{{ pct(r.over_pct) }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p class="muted">Overall: {{ b.overall.actual|money }} spent against a {{ b.overall.budget|money }} Regular budget ({{ b.overall.status }}). Uncategorised spend of {{ b.uncategorised.total_cents|money }} is included in that total but cannot be ranked; <a href="{{ url_for('categorise_page') }}">categorise it</a>.</p>
+</section>
+{% for r in b.over %}
+<section class="card">
+  <h2>{{ r.id }}. {{ r.name }}: top merchants</h2>
+  <table>
+    <thead><tr><th>Payee</th><th class="num">Total</th><th class="num">Transactions</th></tr></thead>
+    <tbody>{% for m in r.merchants %}<tr><td>{{ m.payee }}</td><td class="num">{{ m.total|money }}</td><td class="num">{{ m.n }}</td></tr>{% endfor %}</tbody>
+  </table>
+</section>
+{% endfor %}
+{% if b.txns %}
+<section class="card">
+  <h2>Largest single transactions in overspent categories</h2>
+  <table>
+    <thead><tr><th>Date</th><th>Category</th><th>Description</th><th class="num">Amount</th></tr></thead>
+    <tbody>{% for t in b.txns %}<tr><td>{{ t.txn_date|dmy_iso }}</td><td>{{ t.category }}</td><td>{{ t.description }}</td><td class="num">{{ t.amount|money }}</td></tr>{% endfor %}</tbody>
+  </table>
+</section>
+{% endif %}
+{% endif %}
+{% endblock %}

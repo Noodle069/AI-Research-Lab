@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block body %}
+<section class="card">
+  <h1>Saved as batch {{ i.id }}</h1>
+  <dl class="grid">
+    <div><dt>Account</dt><dd>{{ i.label }} ({{ roles[i.role] }})</dd></div>
+    <div><dt>Period</dt><dd>{{ i.period_start[8:10] }}/{{ i.period_start[5:7] }}/{{ i.period_start[:4] }} to {{ i.period_end[8:10] }}/{{ i.period_end[5:7] }}/{{ i.period_end[:4] }}</dd></div>
+    <div><dt>Transactions saved</dt><dd>{{ i.row_count }} of {{ i.rows_in_file }} in the file</dd></div>
+    <div><dt>Duplicates skipped</dt><dd>{{ i.duplicates_skipped }}</dd></div>
+    {% if r %}<div><dt>Transfer pairs found</dt><dd>{{ r.auto_transfers }} auto-marked, {{ r.suggested_transfers }} to review</dd></div>{% endif %}
+  </dl>
+  <p><a class="btn" href="{{ url_for('transfers_page') }}">Review transfers</a> <a href="{{ url_for('coverage_page') }}">Coverage</a> <a href="{{ url_for('home') }}">Import another</a></p>
+</section>
+{% endblock %}

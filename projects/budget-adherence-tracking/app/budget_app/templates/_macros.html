@@ -1,0 +1,38 @@
+{% macro cat_select(cats, selected, name='category') %}
+<select name="{{ name }}" aria-label="Category">
+  <option value="none" {{ 'selected' if selected is none }}>Uncategorised</option>
+  {% for c in cats %}<option value="{{ c.id }}" {{ 'selected' if selected == c.id }}>{{ c.id }}. {{ c.name }}</option>{% endfor %}
+</select>
+{% endmacro %}
+{% macro pool_select(pools, selected) %}
+<select name="pool" aria-label="Pool">
+  {% for p in pools %}<option value="{{ p }}" {{ 'selected' if p == selected }}>{{ p|capitalize }}</option>{% endfor %}
+</select>
+{% endmacro %}
+{% macro notices(msgs) %}{% for m in msgs %}<p class="notice">{{ m }}</p>{% endfor %}{% endmacro %}
+{% macro cov_warning(issues) %}{% if issues %}
+<div class="card warn"><strong>Coverage warning.</strong> Some statements are partial or missing for this month:
+{% for label, state in issues %}{{ label }} ({{ 'no data' if state == 'none' else 'part of the month' }}){{ ', ' if not loop.last }}{% endfor %}.
+Low spending here may be missing statements, not under-spending. <a href="{{ url_for('coverage_page') }}">See coverage</a>.</div>
+{% endif %}{% endmacro %}
+{% macro month_nav(endpoint, nav, ym) %}
+<p class="monthnav">{% if nav.prev %}<a href="{{ url_for(endpoint, ym=nav.prev) }}">&larr; {{ nav.prev|ymlabel }}</a>{% else %}<span class="muted">&larr;</span>{% endif %}
+<strong>{{ nav.label }}</strong>
+{% if nav.next %}<a href="{{ url_for(endpoint, ym=nav.next) }}">{{ nav.next|ymlabel }} &rarr;</a>{% else %}<span class="muted">&rarr;</span>{% endif %}</p>
+{% endmacro %}
+{% macro status(s) %}<span class="st-{{ s }}">{{ s|capitalize }}</span>{% endmacro %}
+{% macro pct(p) %}{{ (p ~ '%') if p is not none else 'n/a' }}{% endmacro %}
+{% macro barchart(c, labels, title) %}
+<svg class="chart" viewBox="0 0 {{ c.w }} {{ c.h }}" role="img" aria-label="{{ title }}" width="100%">
+  {% for b in c.bars %}<rect class="{{ 'bar over' if b.over else 'bar' }}" x="{{ b.x }}" y="{{ b.y }}" width="{{ b.w }}" height="{{ b.h }}"/>
+  {% if b.by is not none %}<line class="bud" x1="{{ b.bx1 }}" x2="{{ b.bx2 }}" y1="{{ b.by }}" y2="{{ b.by }}"/>{% endif %}
+  <text class="ax" x="{{ b.tx }}" y="{{ c.ty }}" text-anchor="middle" font-size="9">{{ labels[loop.index0] }}</text>{% endfor %}
+</svg>
+{% endmacro %}
+{% macro linechart(c, labels, title) %}
+<svg class="chart" viewBox="0 0 {{ c.w }} {{ c.h }}" role="img" aria-label="{{ title }}" width="100%">
+  <line class="bud" x1="0" x2="{{ c.w }}" y1="{{ c.zero }}" y2="{{ c.zero }}"/>
+  <polyline class="ln" fill="none" points="{{ c.points }}"/>
+  {% for x in c.xs %}<text class="ax" x="{{ x }}" y="{{ c.ty }}" text-anchor="middle" font-size="9">{{ labels[loop.index0] }}</text>{% endfor %}
+</svg>
+{% endmacro %}

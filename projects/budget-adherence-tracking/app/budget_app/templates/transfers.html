@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block body %}
+<section class="card">
+  <h1>Transfer candidates</h1>
+  <p class="muted">Equal and opposite amounts in different accounts within 3 days. Suggestions count as spending until you confirm. Exact same-day pairs are auto-marked as transfers and shown here so you can undo them. Transfers are excluded from category spending.</p>
+  {% if not cands %}<p>Nothing to review.</p>{% else %}
+  <table>
+    <thead><tr><th>State</th><th>Date</th><th>Account and details</th><th>Other side</th><th class="num">Amount</th><th></th></tr></thead>
+    <tbody>
+    {% for c in cands %}
+      <tr><td>{{ 'Auto-marked (same day)' if c.status == 'auto' else 'Suggested' }}</td>
+        <td>{{ c.date_a[8:10] }}/{{ c.date_a[5:7] }}/{{ c.date_a[:4] }}</td>
+        <td>{{ c.acct_a }}: {{ c.desc_a }}</td>
+        <td>{{ c.acct_b }}: {{ c.desc_b }} ({{ c.date_b[8:10] }}/{{ c.date_b[5:7] }})</td>
+        <td class="num">{{ c.cents_a|money }}</td>
+        <td>
+          <form class="inline" method="post" action="{{ url_for('transfer_confirm', cid=c.id) }}"><input type="hidden" name="csrf" value="{{ csrf }}"><button type="submit">Confirm transfer</button></form>
+          <form class="inline" method="post" action="{{ url_for('transfer_reject', cid=c.id) }}"><input type="hidden" name="csrf" value="{{ csrf }}"><button type="submit" class="secondary">Not a transfer</button></form>
+        </td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</section>
+<section class="card">
+  <h2>Rows not counted as spending</h2>
+  <p class="muted">Transfers, income and savings, newest first. Card credits and loan rows default to transfer by account role (offset accounts default like spending accounts); change any row here (for example a card refund back to spend).</p>
+  <table>
+    <thead><tr><th>Date</th><th>Account</th><th>Details</th><th class="num">Amount</th><th>Flow</th></tr></thead>
+    <tbody>
+    {% for t in review %}
+      <tr><td>{{ t.txn_date[8:10] }}/{{ t.txn_date[5:7] }}/{{ t.txn_date[:4] }}</td><td>{{ t.account }}</td><td>{{ t.description }}</td>
+        <td class="num">{{ t.amount_cents|money }}</td>
+        <td><form class="inline" method="post" action="{{ url_for('transaction_flow', tid=t.id) }}"><input type="hidden" name="csrf" value="{{ csrf }}">
+          <select name="flow">{% for f in flows %}<option value="{{ f }}" {{ 'selected' if f == t.flow_type }}>{{ f }}</option>{% endfor %}</select>
+          <button type="submit" class="secondary">Set</button></form></td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p>{% if page > 1 %}<a href="{{ url_for('transfers_page', page=page-1) }}">Newer</a>{% endif %} {% if more %}<a href="{{ url_for('transfers_page', page=page+1) }}">Older</a>{% endif %}</p>
+</section>
+{% endblock %}

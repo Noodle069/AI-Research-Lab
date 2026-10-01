@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% from "_macros.html" import cov_warning, month_nav, status, pct, notices %}
+{% block body %}
+{% if not v %}
+<section class="card"><h1>Month</h1><p>No transactions yet. <a href="{{ url_for('home') }}">Import a statement</a>.</p></section>
+{% else %}
+{{ notices(msgs) }}
+<section class="card">
+  <h1>Month: budget vs actual</h1>
+  {{ month_nav('month_page', nav, ym) }}
+  <p><a href="{{ url_for('bleeding_page', ym=ym) }}">Where am I bleeding (overspend)</a> &middot; <a href="{{ url_for('trends_page') }}">Trends</a> &middot; <a href="{{ url_for('transactions_page', ym=ym) }}">Transactions this month</a></p>
+</section>
+{{ cov_warning(v.coverage) }}
+<section class="card">
+  <h2>Regular budget</h2>
+  <table>
+    <thead><tr><th>Category</th><th class="num">Regular budget</th><th class="num">Regular actual</th><th class="num">Budget left</th><th class="num">Used</th><th>Status</th></tr></thead>
+    <tbody>
+    {% for r in v.rows %}
+      <tr><td>{{ r.id }}. {{ r.name }}</td><td class="num">{{ r.budget|money }}</td><td class="num">{{ r.actual|money }}</td>
+        <td class="num {{ 'neg' if r.left < 0 }}">{{ r.left|money }}</td><td class="num">{{ pct(r.pct) }}</td><td>{{ status(r.status) }}</td></tr>
+    {% endfor %}
+    {% for r in v.other %}
+      <tr><td>{{ r.id }}. {{ r.name }} <span class="muted">(no budget)</span></td><td class="num muted">none</td><td class="num">{{ r.actual|money }}</td><td></td><td></td><td class="muted">Actual only</td></tr>
+    {% endfor %}
+      <tr><td>Uncategorised</td><td class="num muted">none</td><td class="num">{{ v.uncategorised.total_cents|money }}</td><td></td><td></td><td class="muted">{{ v.uncategorised.count }} transactions, <a href="{{ url_for('categorise_page') }}">categorise</a></td></tr>
+    </tbody>
+    <tfoot><tr><td>Overall (regular + uncategorised)</td><td class="num">{{ v.overall.budget|money }}</td><td class="num">{{ v.overall.actual|money }}</td>
+      <td class="num {{ 'neg' if v.overall.left < 0 }}">{{ v.overall.left|money }}</td><td class="num">{{ pct(v.overall.pct) }}</td><td>{{ status(v.overall.status) }}</td></tr></tfoot>
+  </table>
+  <p class="muted">Regular actual: spending in the Regular pool by transaction date. Only spend rows count; transfers, income and savings are excluded.</p>
+  <p class="muted">Overall: total Regular budget against Regular spend in every category plus all Uncategorised spend. Sinking spend is shown below, not in this total.</p>
+  <p class="muted">Status: within is under 90% of budget, near is 90% to 100%, over is above the budget (a zero budget with any spend is over).</p>
+</section>
+<section class="card">
+  <h2>Sinking funds</h2>
+  <table>
+    <thead><tr><th>Category</th><th class="num">Set aside per month</th><th class="num">Sinking spend this month</th><th class="num">Set aside since start</th><th class="num">Sinking spend since start</th><th class="num">Running balance</th></tr></thead>
+    <tbody>
+    {% for s in v.sinking %}
+      <tr><td>{{ s.id }}. {{ s.name }}</td><td class="num">{{ s.monthly|money }}</td><td class="num">{{ s.month_spend|money }}</td><td class="num">{{ s.set_aside|money }}</td><td class="num">{{ s.spent|money }}</td><td class="num {{ 'neg' if s.balance < 0 }}">{{ s.balance|money }}</td></tr>
+    {% endfor %}
+    </tbody>
+    <tfoot><tr><td>Total</td><td class="num">{{ v.sinking_totals.monthly|money }}</td><td class="num">{{ v.sinking_totals.month_spend|money }}</td><td></td><td></td><td class="num {{ 'neg' if v.sinking_totals.balance < 0 }}">{{ v.sinking_totals.balance|money }}</td></tr></tfoot>
+  </table>
+  <p class="muted">Running balance: monthly set-aside times the months from the start month up to this month, minus all Sinking-pool spend from the start month. Months before the start month are ignored.</p>
+  <form method="post" action="{{ url_for('month_sinking_start') }}">
+    <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="back" value="{{ ym }}">
+    <label>Sinking start month (YYYY-MM; blank = earliest month with data)
+      <input type="text" name="start" value="{{ '' if v.sink_start_default else v.sink_start }}" placeholder="{{ v.sink_start or '' }}" size="8" pattern="\d{4}-(0[1-9]|1[0-2])?"></label>
+    <button type="submit" class="secondary">Save</button>
+    <span class="muted">Now using: {{ v.sink_start|ymlabel if v.sink_start else 'none' }}{{ ' (default)' if v.sink_start_default }}</span>
+  </form>
+</section>
+<section class="card {{ '' if v.recon.ok else 'bad' }}">
+  <h2>Reconciliation</h2>
+  <p class="{{ 'ok' if v.recon.ok else 'fail' }}"><strong>{{ 'OK' if v.recon.ok else 'MISMATCH' }}:</strong>
+    category lines {{ (v.recon.cat_regular + v.recon.cat_sinking)|money }} (regular {{ v.recon.cat_regular|money }} + sinking {{ v.recon.cat_sinking|money }})
+    + uncategorised {{ v.recon.uncategorised|money }} = {{ v.recon.lines|money }};
+    total spend for the month, counted directly = {{ v.recon.direct|money }}.</p>
+</section>
+{% endif %}
+{% endblock %}
